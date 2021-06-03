@@ -1,0 +1,132 @@
+---
+title: "NYPD Shooting Incident"
+author: "Akikat"
+date: "5/21/2021"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## NYPD Shooting Incident Analysis
+
+This is a template for analysis of NYPD Shooting Incident data, that can be downloaded from site <https://catalog.data.gov/dataset>.
+
+Note: Prior to analysis the following packages should be installed: tidyverse, lubridate, janitor, details and ggplot2.
+
+```{r libraries}
+library(lubridate)
+library(tidyverse)
+library(dplyr)
+library(janitor)
+library(details)
+```
+
+```{r Data Loading}
+url_in <- "https://data.cityofnewyork.us/api/views/833y-fsy8/rows.csv?accessType=DOWNLOAD"
+
+file <- read.csv(url_in)
+
+```
+
+### Objectives of the analysis
+
+There can be a lot of question asked from this data. I chose three:
+
+* In which parts of the city shootings happen more often?
+* What is the distribution of shooting incidents by days of a week?
+* What are the age groups of most of the victims?
+
+
+### Initial acquitance with data
+
+First let's have a look at the data:
+
+
+```{r Quickglance on a data, echo=TRUE}
+
+str(file)
+
+summary(file)
+```
+
+There are 19 variables in this file. Not all of them are useful for our analysis.
+Therefore, let us choose few important columns that represent city parts, age of victims and dates of incidents:
+
+```{r select data columns, echo=TRUE}
+  newfile <- file  %>% 
+      select(1:4, 12)
+```
+
+Lets us make sure that we have got columns we wanted:
+
+```{r data quicklook, echo=TRUE}
+colnames(newfile)
+
+summary(newfile)
+
+colSums(is.na(newfile)) # making sure there is no missing data
+```
+
+We can derive day_of_week variable from date of an incident using lubridate library.
+
+```{r date conversion, echo=TRUE}
+
+newfile$OCCUR_DATE <- mdy(newfile$OCCUR_DATE)
+
+newfile$OCCUR_DATE <- as.Date(newfile$OCCUR_DATE)
+
+newfile$day_of_week <- format(as.Date(newfile$OCCUR_DATE), "%A")
+```
+
+
+### Data analysis
+
+Now we can have a look at the distribution of incidents by the place, day of the week and age group.
+
+```{r unique values, echo=TRUE}
+
+table(newfile$VIC_AGE_GROUP)
+table(newfile$BORO)
+table(newfile$day_of_week)
+
+tabyl(newfile, BORO, day_of_week)
+```
+
+We can also make visuals to make the data more presentable.
+
+```{r visuals, echo=TRUE}
+ggplot(newfile, aes(factor(day_of_week), fill=BORO )) +
+  geom_bar(stat="count", position = "dodge") + 
+  scale_fill_brewer(palette = "Set1")
+
+
+ggplot(newfile, aes(factor(VIC_AGE_GROUP), fill="red")) +
+  geom_bar(stat="count", position = "dodge") + 
+  scale_fill_brewer(palette = "Set1")
+```
+
+### Results
+
+It is obvious that shootings tend to happen on weekends and people between 18-44 are more likely to be victims.
+Also Brooklyn and Bronx seem to be more dangerous areas of New York city.
+
+### Source of bias
+
+Since the data that I have chosen is not interpetable - date, age, place - it is not much prone to bias.
+There are some unknown data points in the database, but they are few comapred to main bulk of the data, so most likely does not affect it.
+
+It was expected that in NY kids and elders are much less likely to be involved with shooting, and data confirmed it.
+I am not very familiar with NY boroughs. But judging from general stereotypes of Brooklyn being rough place and Staten Island an area for more wealthy citizens, looks like the data correlates with expectations. It is more likely to encounter shootings in poorer areas of any city ont he world.
+
+And of course, weekends being traditionally time for more partying and social encounters, it is not surprising to see the rise of incidents on weekends and drop in mid-week.
+
+Disclaimer: this is very basic analysis done as an exercise. Inferences could vary with more time spent on working on data.
+
+
+```{r session info, echo=TRUE}
+ sessionInfo()
+```
